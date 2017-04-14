@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Start Server",
+            "type": "dart-cli",
+            "request": "launch",
+            "program": "${workspaceRoot}/bin/server.dart"
+        },
+        {
+            "name": "Start Multiserver",
+            "type": "dart-cli",
+            "request": "launch",
+            "program": "${workspaceRoot}/bin/multi_server.dart"
+        }
+    ]
+}
