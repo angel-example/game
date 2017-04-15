@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-      <configuration default="false" name="PlayerPosition Tests" type="DartTestRunConfigurationType" factoryName="Dart Test" singleton="true">
-        <option name="filePath" value="$PROJECT_DIR$/test/services/player_position_test.dart" />
-        <method />
-      </configuration>
-    </component>
+  <configuration default="false" name="PlayerPosition Tests" type="DartTestRunConfigurationType" factoryName="Dart Test" singleton="true">
+    <option name="filePath" value="$PROJECT_DIR$/test/services/player_status_test.dart" />
+    <method />
+  </configuration>
+</component>

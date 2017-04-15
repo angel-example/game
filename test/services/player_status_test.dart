@@ -19,12 +19,7 @@ main() async {
   });
 
   test('index via REST', () async {
-    var response = await client.get('/api/player_positions');
-    expect(response, hasStatus(HttpStatus.OK));
-  });
-
-  test('Index player_positions', () async {
-    var player_positions = await client.service('api/player_positions').index();
-    print(player_positions);
+    var response = await client.get('/api/player_statuses');
+    expect(response, hasStatus(HttpStatus.METHOD_NOT_ALLOWED));
   });
 }

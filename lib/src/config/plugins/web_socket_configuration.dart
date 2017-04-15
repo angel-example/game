@@ -1,17 +1,27 @@
 library game.config.plugins.web_socket_configuration;
 
 import 'dart:async';
-import 'package:angel_auth/angel_auth.dart';
-import 'package:angel_framework/angel_framework.dart';
+import 'dart:math' as math;
+import 'package:angel_common/angel_common.dart';
 import 'package:angel_websocket/server.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/models.dart';
+import '../../../common.dart';
+
+final Validator COORDINATE = new Validator({
+  'x*': [isNum, isPositive],
+  'y*': [isNum, isPositive]
+});
+
+final Validator PLAYER_STATUS =
+    new Validator({'windowSize': COORDINATE, 'position': COORDINATE});
 
 class WebSocketConfiguration extends AngelPlugin {
   @override
   Future call(Angel app) async {
     // Fire queued events every 3 seconds...
-    var userService = app.service('api/users');
+    var statusService = app.service('api/player_statuses'),
+        userService = app.service('api/users');
     var ws = new _Delay(new Duration(seconds: 3));
 
     /// Delete users on disconnect
@@ -25,16 +35,17 @@ class WebSocketConfiguration extends AngelPlugin {
     });
 
     await app.configure(ws);
-    await app.configure(new GameController(userService));
+    await app.configure(new GameController(statusService, userService));
   }
 }
 
 @Expose('/game')
 class GameController extends WebSocketController {
-  final Service _userService;
+  final math.Random _rnd = new math.Random();
+  final Service _statusService, _userService;
   final Uuid _uuid = new Uuid();
 
-  GameController(this._userService);
+  GameController(this._statusService, this._userService);
 
   /// TODO: Remove this
   @override
@@ -50,16 +61,40 @@ class GameController extends WebSocketController {
       throw new AngelHttpException.forbidden();
     else {
       var trustedToken = session['trusted_token'] = _uuid.v4();
-      var status = new PlayerStatus();
-      throw new AngelHttpException.unavailable(
-          message: 'TODO: initialize - make status, validate');
-      var player = new User(
-          sprite: 'arabian_boy',
-          token: trustedToken,
-          status: status); // TODO: Random sprite name
-      await _userService.create(player.toJson());
-      socket.send('initialized',
-          {'status': PlayerStatusMapper.toJson(status), 'token': trustedToken});
+      var data = action.data;
+
+      if (data is! Map || !data.containsKey('window_size'))
+        throw new AngelHttpException.badRequest();
+
+      try {
+        var windowSize = COORDINATE.enforce(data['window_size']);
+        var position = Size2D.within(WINDOW_SIZE, _rnd);
+
+        var user = new User(
+            sprite: Sprite.ALL[_rnd.nextInt(Sprite.ALL.length)],
+            token: trustedToken);
+        print(user.toJson());
+        Map createdUser = await _userService.create(user.toJson());
+
+        var status = new PlayerStatus(
+            userId: createdUser['id'],
+            windowSize: new Coordinate.fromMap(windowSize),
+            position: new Coordinate(x: position.x, y: position.y));
+        Map createdStatus = await _statusService.create(status.toJson());
+
+        await _userService.modify(createdUser['id'], {'status': createdStatus});
+
+        await socket.send('initialized', {
+          'userId': createdUser['id'],
+          'status': createdStatus,
+          'token': trustedToken
+        });
+      } on ValidationException catch (e) {
+        throw new AngelHttpException.badRequest(
+            message: e.message, errors: e.errors);
+      } catch (e) {
+        rethrow;
+      }
     }
   }
 

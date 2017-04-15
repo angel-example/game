@@ -14,6 +14,6 @@ configureServer(Angel app) async {
     ..beforeAll(hooks.remove('token'))
     ..beforeCreated.listen(validateEvent(CREATE_USER))
     ..beforeCreated.listen(hooks.addCreatedAt())
-    ..beforeModify(hooks.addUpatedAt())
+    ..beforeModify(hooks.addUpdatedAt())
     ..afterAll(hooks.remove('token'));
 }

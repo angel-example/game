@@ -22,6 +22,6 @@ main() async {
     final response = await client.get('/api/users');
 
     // By default, we locked this away from the Internet...
-    expect(response, hasStatus(HttpStatus.FORBIDDEN));
+    expect(response, hasStatus(HttpStatus.METHOD_NOT_ALLOWED));
   });
 }

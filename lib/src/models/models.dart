@@ -41,10 +41,14 @@ class PlayerStatus extends Model {
       this.position,
       this.createdAt,
       this.updatedAt});
+  Map<String, dynamic> toJson() => PlayerStatusMapper.map(this);
 }
 
 @JsonClass()
 class Coordinate {
   num x, y;
   Coordinate({this.x, this.y});
+
+  factory Coordinate.fromMap(Map<String, dynamic> map) =>
+      new Coordinate(x: map['x'], y: map['y']);
 }
