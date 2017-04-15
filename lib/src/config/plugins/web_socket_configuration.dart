@@ -47,12 +47,6 @@ class GameController extends WebSocketController {
 
   GameController(this._statusService, this._userService);
 
-  /// TODO: Remove this
-  @override
-  onAction(WebSocketAction action, WebSocketContext socket) async {
-    socket.request.inject(WebSocketAction, action);
-  }
-
   @ExposeWs('initialize')
   initialize(WebSocketContext socket, WebSocketAction action) async {
     var session = socket.request.session;
@@ -71,21 +65,24 @@ class GameController extends WebSocketController {
         var position = Size2D.within(WINDOW_SIZE, _rnd);
 
         var user = new User(
-            sprite: Sprite.ALL[_rnd.nextInt(Sprite.ALL.length)],
+            sprite: SpriteName
+                .CHARACTERS[_rnd.nextInt(SpriteName.CHARACTERS.length)],
             token: trustedToken);
-        print(user.toJson());
         Map createdUser = await _userService.create(user.toJson());
+        print(createdUser);
 
         var status = new PlayerStatus(
             userId: createdUser['id'],
             windowSize: new Coordinate.fromMap(windowSize),
             position: new Coordinate(x: position.x, y: position.y));
         Map createdStatus = await _statusService.create(status.toJson());
+        print(createdStatus);
 
         await _userService.modify(createdUser['id'], {'status': createdStatus});
 
         await socket.send('initialized', {
           'userId': createdUser['id'],
+          'sprite': user.sprite,
           'status': createdStatus,
           'token': trustedToken
         });
@@ -128,6 +125,7 @@ class _Delay extends AngelWebSocket {
       else {
         await Future.wait(_batched.map((b) =>
             super.batchEvent(b.event, filter: b.filter, notify: b.notify)));
+        _batched.clear();
       }
     });
 

@@ -51,7 +51,7 @@ class TrustedTokenAuthStrategy extends AuthStrategy {
       throw new AngelHttpException.badRequest();
     else {
       var token = body['token'].toString();
-      List<User> users = (await _service.index({
+      Iterable<User> users = (await _service.index({
         'query': {'token': token}
       }))
           .map(UserMapper.parse);

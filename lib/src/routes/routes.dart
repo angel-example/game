@@ -8,14 +8,12 @@ configureBefore(Angel app) async {
 }
 
 /// Put your app routes here!
-configureRoutes(Angel app) async {
-  app.get('/', (req, ResponseContext res) => res.render('hello'));
-}
+configureRoutes(Angel app) async {}
 
 configureAfter(Angel app) async {
   // Uncomment this to proxy over pub serve while in development:
   // await app.configure(new PubServeLayer());
-  
+
   // Static server at /web or /build/web, depending on if in production
   //
   // In production, `Cache-Control` headers will also be enabled.
@@ -51,7 +49,7 @@ configureAfter(Angel app) async {
   // Ideally you'll run this on a `multiserver` instance, but if not,
   // feel free to knock yourself out!
   //
-  // app.responseFinalizers.add(gzip());
+  app.responseFinalizers.add(gzip());
 }
 
 configureServer(Angel app) async {

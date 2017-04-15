@@ -3,3 +3,5 @@ host: 127.0.0.1
 mongo_db: mongodb://localhost:27017/game
 port: 3000
 jwt_secret: "35664l82874154q304724ve43u2E84I0"
+base_url: http://localhost:3000
+ws_url: ws://localhost:3000/ws

@@ -27,5 +27,6 @@ final Validator PLAYER_STATUS = new Validator({
 final Validator VALID_INITIALIZED_RESPONSE = new Validator({
   'userId*': VALID_STRING,
   'token*': VALID_STRING,
+  'sprite*': VALID_STRING,
   'status*': PLAYER_STATUS
 });

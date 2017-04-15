@@ -13,6 +13,8 @@
       <excludeFolder url="file://$MODULE_DIR$/test/services/packages" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
       <excludeFolder url="file://$MODULE_DIR$/tool/packages" />
+      <excludeFolder url="file://$MODULE_DIR$/web/assets/background/packages" />
+      <excludeFolder url="file://$MODULE_DIR$/web/assets/characters/packages" />
       <excludeFolder url="file://$MODULE_DIR$/web/assets/packages" />
       <excludeFolder url="file://$MODULE_DIR$/web/images/packages" />
       <excludeFolder url="file://$MODULE_DIR$/web/packages" />
