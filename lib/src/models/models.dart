@@ -50,5 +50,11 @@ class Coordinate {
   Coordinate({this.x, this.y});
 
   factory Coordinate.fromMap(Map<String, dynamic> map) =>
-      new Coordinate(x: map['x'], y: map['y']);
+      CoordinateMapper.parse(map);
+}
+
+@JsonClass()
+class Collision {
+  String player1, player2;
+  Collision({this.player1, this.player2});
 }

@@ -8,6 +8,10 @@ import 'package:uuid/uuid.dart';
 import '../../models/models.dart';
 import '../../../common.dart';
 
+final Validator COLLIDE = new Validator({
+  'userId*': [isString, isNotEmpty]
+});
+
 final Validator COORDINATE = new Validator({
   'x*': [isNum, isPositive],
   'y*': [isNum, isPositive]
@@ -15,6 +19,20 @@ final Validator COORDINATE = new Validator({
 
 final Validator PLAYER_STATUS =
     new Validator({'windowSize': COORDINATE, 'position': COORDINATE});
+
+Future<User> loadUserByToken(RequestContext req, Service userService) async {
+  if (req.session.containsKey('trusted_token')) {
+    Iterable<Map> users = (await userService.index({
+      'query': {'token': req.session['trusted_token']}
+    }));
+
+    if (users.isNotEmpty) {
+      return UserMapper.parse(users.first);
+    }
+  }
+
+  return null;
+}
 
 class WebSocketConfiguration extends AngelPlugin {
   @override
@@ -25,27 +43,27 @@ class WebSocketConfiguration extends AngelPlugin {
     var ws = new _Delay(new Duration(seconds: 3));
 
     /// Delete users on disconnect
-    ws.onDisconnection.listen((socket) {
+    ws.onDisconnection.listen((socket) async {
       var req = socket.request;
+      var user = await loadUserByToken(req, userService);
 
-      if (req.injections.containsKey(AuthToken)) {
-        var token = req.grab<AuthToken>('token');
-        userService.remove(token.userId);
-      }
+      if (user != null) await userService.remove(user.id);
     });
 
     await app.configure(ws);
-    await app.configure(new GameController(statusService, userService));
+    await app.configure(new GameController(
+        app.service('api/collisions'), statusService, userService));
   }
 }
 
 @Expose('/game')
 class GameController extends WebSocketController {
   final math.Random _rnd = new math.Random();
-  final Service _statusService, _userService;
+  final Service _collisionService, _statusService, _userService;
   final Uuid _uuid = new Uuid();
 
-  GameController(this._statusService, this._userService);
+  GameController(
+      this._collisionService, this._statusService, this._userService);
 
   @ExposeWs('initialize')
   initialize(WebSocketContext socket, WebSocketAction action) async {
@@ -69,19 +87,16 @@ class GameController extends WebSocketController {
                 .CHARACTERS[_rnd.nextInt(SpriteName.CHARACTERS.length)],
             token: trustedToken);
         Map createdUser = await _userService.create(user.toJson());
-        print(createdUser);
 
         var status = new PlayerStatus(
             userId: createdUser['id'],
             windowSize: new Coordinate.fromMap(windowSize),
             position: new Coordinate(x: position.x, y: position.y));
         Map createdStatus = await _statusService.create(status.toJson());
-        print(createdStatus);
-
-        await _userService.modify(createdUser['id'], {'status': createdStatus});
 
         await socket.send('initialized', {
           'userId': createdUser['id'],
+          'user': createdUser,
           'sprite': user.sprite,
           'status': createdStatus,
           'token': trustedToken
@@ -97,13 +112,44 @@ class GameController extends WebSocketController {
 
   @ExposeWs('move')
   move(WebSocketContext socket, WebSocketAction action) async {
-    var req = socket.request;
+    try {
+      var req = socket.request;
+      var user = await loadUserByToken(req, _userService);
 
-    if (!req.properties.containsKey('user'))
-      throw new AngelHttpException.forbidden();
-    else {
-      var user = req.user as User;
-      throw new AngelHttpException.unavailable(message: 'TODO: move');
+      if (user == null) {
+        throw new AngelHttpException.forbidden();
+      } else {
+        var status =
+            PlayerStatusMapper.parse(PLAYER_STATUS.enforce(action.data));
+        await _statusService.modify(user.status.id,
+            {'position': CoordinateMapper.map(status.position)});
+      }
+    } on ValidationException catch (e) {
+      throw new AngelHttpException.badRequest(
+          message: e.message, errors: e.errors);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @ExposeWs('collide')
+  collide(WebSocketContext socket, WebSocketAction action) async {
+    try {
+      var req = socket.request;
+      var user = await loadUserByToken(req, _userService);
+
+      if (user == null) {
+        throw new AngelHttpException.forbidden();
+      } else {
+        var data = COLLIDE.enforce(action.data);
+        await _collisionService
+            .create({'player1': user.id, 'player2': data['userId']});
+      }
+    } on ValidationException catch (e) {
+      throw new AngelHttpException.badRequest(
+          message: e.message, errors: e.errors);
+    } catch (e) {
+      rethrow;
     }
   }
 }

@@ -147,3 +147,42 @@ abstract class CoordinateMapper {
     return JSON.encoder.convert(map(object));
   }
 }
+
+// **************************************************************************
+// Generator: JsonGenerator
+// Target: class Collision
+// **************************************************************************
+
+/// Mapper for Collision
+abstract class CollisionMapper {
+  /// Converts an instance of Collision to Map.
+  static Map<String, dynamic> map(Collision object) {
+    if (object == null) return null;
+    return (new _owl_json.MapBuilder(ordered: false)
+          ..put('player1', object.player1)
+          ..put('player2', object.player2))
+        .toMap();
+  }
+
+  /// Converts a Map to an instance of Collision.
+  static Collision parse(Map<String, dynamic> map) {
+    if (map == null) return null;
+    final Collision object = new Collision();
+    object.player1 = map['player1'];
+    object.player2 = map['player2'];
+    return object;
+  }
+
+  /// Converts a JSON string to an instance of Collision.
+  static Collision fromJson(String json) {
+    if (json == null || json.isEmpty) return null;
+    final Map<String, dynamic> map = JSON.decoder.convert(json);
+    return parse(map);
+  }
+
+  /// Converts an instance of Collision to JSON string.
+  static String toJson(Collision object) {
+    if (object == null) return null;
+    return JSON.encoder.convert(map(object));
+  }
+}

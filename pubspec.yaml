@@ -6,6 +6,7 @@ dependencies:
   angel_common: "^1.0.0"
   angel_configuration: "^1.0.0"
   angel_multiserver: "^1.0.0"
+  angel_relations: ^1.0.0
   angel_security: ^1.0.0
   angel_websocket: ^1.0.0
   owl: ^0.1.1

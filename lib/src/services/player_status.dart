@@ -5,6 +5,5 @@ configureServer(Angel app) async {
   app.use('/api/player_statuses', new MapService());
 
   var service = app.service('api/player_statuses') as HookedService;
-
   service.beforeAll(hooks.disable());
 }
