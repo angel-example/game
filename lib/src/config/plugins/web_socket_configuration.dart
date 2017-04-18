@@ -40,7 +40,7 @@ class WebSocketConfiguration extends AngelPlugin {
     // Fire queued events every 3 seconds...
     var statusService = app.service('api/player_statuses'),
         userService = app.service('api/users');
-    var ws = new _Delay(new Duration(seconds: 3));
+    var ws = new AngelWebSocket();
 
     /// Delete users on disconnect
     ws.onDisconnection.listen((socket) async {
@@ -80,13 +80,28 @@ class GameController extends WebSocketController {
 
       try {
         var windowSize = COORDINATE.enforce(data['window_size']);
-        var position = Size2D.within(WINDOW_SIZE, _rnd);
+        Size2D position;
+
+        while (position == null) {
+          position = Size2D.within(WINDOW_SIZE, _rnd);
+          Iterable<User> users =
+              (await _userService.index()).map(UserMapper.parse);
+
+          for (var user in users.where((u) => u.status != null)) {
+            if ((position.x - user.status.position.x).abs() <= 32 ||
+                (position.x - user.status.position.x).abs() <= 48) {
+              position = null;
+              break;
+            }
+          }
+        }
 
         var user = new User(
             sprite: SpriteName
                 .CHARACTERS[_rnd.nextInt(SpriteName.CHARACTERS.length)],
             token: trustedToken);
         Map createdUser = await _userService.create(user.toJson());
+        print('Created user #${createdUser['id']}');
 
         var status = new PlayerStatus(
             userId: createdUser['id'],
@@ -127,8 +142,8 @@ class GameController extends WebSocketController {
     } on ValidationException catch (e) {
       throw new AngelHttpException.badRequest(
           message: e.message, errors: e.errors);
-    } catch (e) {
-      rethrow;
+    } on AngelHttpException catch (e) {
+      socket.sendError(e);
     }
   }
 
@@ -152,47 +167,4 @@ class GameController extends WebSocketController {
       rethrow;
     }
   }
-}
-
-class _Delay extends AngelWebSocket {
-  final List<_BatchInfo> _batched = [];
-  final Duration _duration;
-  Timer _timer;
-
-  _Delay(this._duration);
-
-  @override
-  call(Angel app) async {
-    await super.call(app);
-
-    _timer = new Timer.periodic(_duration, (_) async {
-      if (_batched.isEmpty)
-        return;
-      else {
-        await Future.wait(_batched.map((b) =>
-            super.batchEvent(b.event, filter: b.filter, notify: b.notify)));
-        _batched.clear();
-      }
-    });
-
-    app.justBeforeStop.add((app) async {
-      _timer.cancel();
-    });
-  }
-
-  @override
-  batchEvent(WebSocketEvent e,
-      {filter(WebSocketContext socket), bool notify: true}) {
-    _batched.add(new _BatchInfo(e, filter, notify != false));
-  }
-}
-
-typedef _Filter(WebSocketContext socket);
-
-class _BatchInfo {
-  final WebSocketEvent event;
-  final _Filter filter;
-  final bool notify;
-
-  _BatchInfo(this.event, this.filter, this.notify);
 }

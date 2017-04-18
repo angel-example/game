@@ -135,25 +135,26 @@ class ExampleGame {
 
       // Load everybody else...
       client.service('api/users').index();
-
       // Regularly send updates
-      new async_.Timer.periodic(new Duration(seconds: 1), (_) async {
-        client.send(
-            'move',
-            new WebSocketAction(data: {
-              'position': {'x': player.x, 'y': player.y},
-              'window_size': {'x': window.innerWidth, 'y': window.innerHeight}
-            }));
-      });
+      if (false)
+        new async_.Timer.periodic(new Duration(seconds: 1), (_) async {
+          client.send(
+              'move',
+              new WebSocketAction(data: {
+                'position': {'x': player.x, 'y': player.y},
+                'window_size': {'x': window.innerWidth, 'y': window.innerHeight}
+              }));
+        });
     });
 
     client.service('api/collisions').onCreated.listen((e) {
       var collision = CollisionMapper.parse(e.data);
 
       for (var id in [collision.player1, collision.player2]) {
-        if (others.containsKey(id))
+        if (others.containsKey(id)) {
           others[id].kill();
-        else if (id == this.user?.id) {
+          others.remove(id);
+        } else if (id == this.user?.id) {
           player.kill();
           window.alert('Oh no! You died!');
         }
@@ -166,6 +167,7 @@ class ExampleGame {
           for (var user in e.data) handleUser(UserMapper.parse(user), game);
       })
       ..onCreated.listen((e) {
+        print('User created: ${e.data}; Our user: ${this.user}');
         var user = UserMapper.parse(e.data);
         handleUser(user, game);
       })
@@ -199,11 +201,13 @@ class ExampleGame {
   }
 
   void handleUser(User u, Game game) {
-    if (!others.containsKey(u.id) && u.id != user?.id && u?.status != null) {
+    if (u == null || user == null) return;
+
+    if (u.id != user?.id && u.status != null) {
       var pos = new Size2D(u.status.position.x, u.status.position.y);
-      var sprite = others[u.id] = game.add.sprite(pos.x, pos.y, u.sprite)
-        ..anchor.setTo(0.5);
-      otherPlayers.add(sprite);
+      var sprite = others[u.id] = otherPlayers.create(
+          pos.x.toInt(), pos.y.toInt(), u.sprite)..anchor.setTo(0.5);
+      window.console.info('Found user #${u.id} at (${pos.x}, ${pos.y})');
       setUpAnimations(sprite, game);
     }
   }
